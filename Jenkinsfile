@@ -26,7 +26,7 @@ pipeline {
         }
     }
     environment {
-        DOCKER_IMAGE = 'your-dockerhub-username/assessment-tax:v1'
+        DOCKER_IMAGE = 'locker01/assessment-tax:v1'
         DOCKER_CREDENTIALS = credentials('docker-hub-credentials')
     }
     stages {
