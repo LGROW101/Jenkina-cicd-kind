@@ -6,11 +6,6 @@ pipeline {
                 kind: Pod
                 spec:
                   containers:
-                  - name: helm
-                    image: alpine/helm:3.9.0
-                    command:
-                    - cat
-                    tty: true
                   - name: golang
                     image: golang:1.22.1
                     command:
@@ -66,14 +61,6 @@ pipeline {
                         sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                         sh 'docker push ${DOCKER_IMAGE}'
                     }
-                }
-            }
-        }
-        stage('Deploy to Kubernetes') {
-            steps {
-                container('helm') {
-                    sh 'helm version'
-                    sh 'helm upgrade --install my-app ./helm/my-app --set image.tag=${DOCKER_IMAGE}'
                 }
             }
         }
