@@ -7,7 +7,7 @@ pipeline {
                 spec:
                   containers:
                   - name: golang
-                    image: golang:1.21
+                    image: golang:1.22.1
                     command:
                     - cat
                     tty: true
@@ -15,13 +15,12 @@ pipeline {
                     image: docker:dind
                     securityContext:
                       privileged: true
-                    volumeMounts:
-                    - name: docker-socket
-                      mountPath: /var/run/docker.sock
-                  volumes:
-                  - name: docker-socket
-                    hostPath:
-                      path: /var/run/docker.sock
+                    env:
+                    - name: DOCKER_TLS_CERTDIR
+                      value: ""
+                    command:
+                    - dockerd-entrypoint.sh
+                    tty: true
             '''
         }
     }
@@ -33,14 +32,24 @@ pipeline {
         stage('Unit Test') {
             steps {
                 container('golang') {
+                    sh 'go version'
                     sh 'go mod download'
                     sh 'go test ./... -v -coverprofile=coverage.out'
                     sh 'go tool cover -func=coverage.out'
+                    sh 'go tool cover -html=coverage.out -o coverage.html'
                 }
             }
             post {
                 always {
-                    archiveArtifacts artifacts: 'coverage.out', fingerprint: true
+                    archiveArtifacts artifacts: 'coverage.out,coverage.html', fingerprint: true
+                    publishHTML(target: [
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: false,
+                        keepAll: true,
+                        reportDir: '.',
+                        reportFiles: 'coverage.html',
+                        reportName: 'Go Coverage Report'
+                    ])
                 }
             }
         }
@@ -54,11 +63,6 @@ pipeline {
                     }
                 }
             }
-        }
-    }
-    post {
-        always {
-            cleanWs()
         }
     }
 }
